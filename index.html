@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous" />
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" />
+        <title>Transmittal Form</title>
+        <style>
+            body { background-color: white; }
+            .form-header { text-align: center; margin-bottom: 2rem; }
+            .form-header h2 { font-weight: bold; }
+            .card { border: 1px solid #dee2e6; }
+            .section-box { border: 1px solid #ced4da; padding: 1rem; margin-bottom: 1.5rem; border-radius: 0.25rem; }
+            .table { table-layout: fixed; width: 100%; }
+            .table th { white-space: normal; word-wrap: break-word; vertical-align: middle; }
+            .table td { word-wrap: break-word; vertical-align: middle; } /* Vertically align cell content */
+
+            /* UPDATED: Styles now target textarea */
+            .table textarea {
+                border: none;
+                background-color: transparent;
+                width: 100%;
+                padding: 0.5rem;
+                resize: vertical; /* Allow vertical resizing by the user */
+                overflow: hidden; /* Hide scrollbar until needed */
+                min-height: 38px; /* Set a minimum height */
+            }
+            .table textarea:focus {
+                outline: none;
+                box-shadow: none;
+                background-color: #e9ecef;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="app" class="container-fluid p-3 p-md-4">
+            
+            <div class="text-center mb-4">
+                <img src="https://raw.githubusercontent.com/mrjeronluther/Memo-Routing-Landing-Page/main/WhatsApp%20Image%202025-06-05%20at%2015.44.42_3fc69535.jpg" alt="Header Image" class="img-fluid" style="max-width: 600px;"/>
+            </div>
+
+            <div class="form-header">
+                <h2>{{ formTitle }}</h2>
+                <p class="text-muted mb-0">{{ addressLine }}</p>
+                <p class="text-muted">{{ phoneLine }}</p>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-xl-12 col-lg-12">
+                    <div class="card shadow-sm">
+                        <div class="card-body p-3 p-md-4">
+                            <div class="row mb-3 align-items-center">
+                                <div class="col-md-2"><label class="form-label fw-bold">TRANSMITTAL NO.</label></div>
+                                <div class="col-md-10">
+                                    <div v-if="isLoadingInitial" class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Loading...</span></div>
+                                    <span v-else class="fs-5 fw-bold text-primary">{{ transmittalNo }}</span>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-lg-6">
+                                    <div class="section-box">
+                                        <div class="row g-3">
+                                            <div class="col-12"><strong class="fs-5">FROM:</strong></div>
+                                            <!-- UPDATED: Converted input to textarea -->
+                                            <div class="col-sm-6"><textarea rows="1" class="form-control" placeholder="Name" v-model.trim="fromName" @input="autoResizeTextarea"></textarea></div>
+                                            <div class="col-sm-6"><textarea rows="1" class="form-control" placeholder="Department (COG/PCU)" v-model.trim="fromDepartment" @input="autoResizeTextarea"></textarea></div>
+                                            <div class="col-12"><input type="date" class="form-control" v-model="dateTransmitted" /></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <div class="section-box">
+                                        <div class="row g-3">
+                                            <div class="col-12"><strong class="fs-5">TO:</strong></div>
+                                            <!-- UPDATED: Converted input to textarea -->
+                                            <div class="col-sm-6"><textarea rows="1" class="form-control" placeholder="Name" v-model.trim="toName" @input="autoResizeTextarea"></textarea></div>
+                                            <div class="col-sm-6"><textarea rows="1" class="form-control" placeholder="Department" v-model.trim="toDepartment" @input="autoResizeTextarea"></textarea></div>
+                                            <div class="col-12"><textarea rows="1" class="form-control" placeholder="Address" v-model.trim="toAddress" @input="autoResizeTextarea"></textarea></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mb-4">
+                                <div class="col-md-7">
+                                    <label for="sourceFileInput" class="form-label fw-bold">Select Source File to Check:</label>
+                                    <input class="form-control" list="sourceFilesDatalist" id="sourceFileInput" :value="sourceFileSearch" @input="updateSelectedSourceId" :placeholder="isLoadingSources ? 'Loading files...' : 'Type or select a file'" :disabled="isLoadingSources"/>
+                                    <datalist id="sourceFilesDatalist">
+                                        <option v-for="file in sourceFiles" :key="file.id" :value="file.label"></option>
+                                    </datalist>
+                                </div>
+                            </div>
+        
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 45px;" class="text-center">#</th>
+                                            <th>DOCUMENT TRANSMITTED/ DETAILS</th>
+                                            <th>RFP/ PEF #</th>
+                                            <th>SUPPLIER/ VENDOR/ AGENCY</th>
+                                            <th>PAYOR COMPANY</th>
+                                            <th>PROPERTY</th>
+                                            <th>LOCATION</th>
+                                            <th>SECTOR</th>
+                                            <th>TYPE OF SERVICE</th>
+                                            <th>PERIOD COVERED</th>
+                                            <th>PARTICULARS</th>
+                                            <th>RFP/ PEF AMOUNT</th>
+                                            <th style="width: 50px;"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="(item, index) in items" :key="index">
+                                            <td class="text-center align-middle">{{ index + 1 }}</td>
+                                            <!-- UPDATED: All inputs in table are now textareas -->
+                                            <td><textarea rows="1" v-model="item.docDetails" @input="autoResizeTextarea"></textarea></td>
+                                            <td class="position-relative">
+                                                <textarea rows="1" v-model.trim="item.rfpPef" @blur="searchRfpData(index)" :disabled="item.isSearching" class="pe-4" @input="autoResizeTextarea"></textarea>
+                                                <div v-if="item.isSearching" class="spinner-border spinner-border-sm text-secondary position-absolute" role="status" style="right: 8px; top: 10px;"></div>
+                                            </td>
+                                            <td><textarea rows="1" v-model="item.supplier" @input="autoResizeTextarea"></textarea></td>
+                                            <td><textarea rows="1" v-model="item.payorCompany" @input="autoResizeTextarea"></textarea></td>
+                                            <td><textarea rows="1" v-model="item.property" @input="autoResizeTextarea"></textarea></td>
+                                            <td><textarea rows="1" v-model="item.location" @input="autoResizeTextarea"></textarea></td>
+                                            <td><textarea rows="1" v-model="item.sector" @input="autoResizeTextarea"></textarea></td>
+                                            <td><textarea rows="1" v-model="item.serviceType" @input="autoResizeTextarea"></textarea></td>
+                                            <td><textarea rows="1" v-model="item.periodCovered" @input="autoResizeTextarea"></textarea></td>
+                                            <td><textarea rows="1" v-model="item.particulars" @input="autoResizeTextarea"></textarea></td>
+                                            <td><textarea rows="1" class="text-end" placeholder="0.00" :value="formatCurrency(item.rfpAmount)" @input="item.rfpAmount = parseCurrency($event.target.value); autoResizeTextarea($event)"></textarea></td>
+                                            <td class="text-center"><button class="btn btn-sm btn-outline-danger" @click="removeItemRow(index)" :disabled="items.length === 1"><i class="bi bi-trash"></i></button></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <div v-if="alertMessage" :class="['alert', alertType, 'mt-4']" role="alert">{{ alertMessage }}</div>
+                            </div>
+                            <div id="form-actions" class="row g-2 mt-4 align-items-center">
+                                <div class="col-12 col-sm-auto"><button class="btn btn-secondary w-100" @click="addItemRow"><i class="bi bi-plus-circle me-2"></i>Add Row</button></div>
+                                <div class="col-12 col-sm-auto"><button class="btn btn-info w-100" @click="printPreview" :disabled="isSubmitting"><i class="bi bi-printer me-2"></i>Print</button></div>
+                                <div class="col-12 col-sm-auto ms-sm-auto">
+                                     <button class="btn btn-primary btn-lg w-100 w-sm-auto" @click="submitForm" :disabled="isSubmitting || !isFormValid">
+                                        <span v-if="isSubmitting" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                        <span>{{ isSubmitting ? 'Submitting...' : 'Submit Transmittal' }}</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script>
+    // MODIFICATION #1: Import 'nextTick'
+    const { createApp, ref, onMounted, watch, computed, nextTick } = Vue;
+
+    const serverApi = {
+        fetchRfpData: (rfpNumber, sourceId) => new Promise((resolve, reject) => google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).fetchRfpData(rfpNumber, sourceId)),
+        getSourceFiles: () => new Promise((resolve, reject) => google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).getSourceFiles()),
+        generateTransmittalNumber: () => new Promise((resolve, reject) => google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).generateTransmittalNumber()),
+        saveTransmittalData: (formData) => new Promise((resolve, reject) => google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).saveTransmittalData(formData)),
+        getPrintPreviewHtml: (formData) => new Promise((resolve, reject) => google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).getPrintPreviewHtml(formData))
+    };
+
+    createApp({
+        setup() {
+            const fromDepartment = ref(""); 
+            const transmittalNo = ref("");
+            const fromName = ref("");
+            const dateTransmitted = ref(new Date().toISOString().slice(0, 10));
+            const toName = ref("");
+            const toDepartment = ref(""); 
+            const toAddress = ref(""); 
+            const sourceFiles = ref([]);
+            const selectedSourceId = ref("");
+            const sourceFileSearch = ref("");
+            const getNewItem = () => ({ docDetails: "", rfpPef: "", supplier: "", payorCompany: "", property: "", location: "", sector: "", serviceType: "", periodCovered: "", particulars: "",  rfpAmount: "", isSearching: false });
+            const items = ref([getNewItem()]);
+            
+            const isLoadingInitial = ref(true);
+            const isLoadingSources = ref(true);
+            const isSubmitting = ref(false);
+            const alertMessage = ref("");
+            const alertType = ref("");
+            const formTitle = ref("TRANSMITTAL FORM");
+            const addressLine = ref("30/F Alliance Global Tower, 36th Street cor. 11th Avenue. Uptown Bonifacio, Taguig City 1630");
+            const phoneLine = ref("(632)898-5999 Fax No. 857-9899 - www.megaworldcorp.com)");
+            
+            const departmentDetails = {
+                COG: { address: "2nd Floor 8 IBM Bldg. Eastwood Ave. Eastwood City Cyberpark Bagumbayan, Quezon City Metro Manila.", phone: "-" },
+                PCU: { address: "B2 (near Tower 3 Elevator) Uptown Mall, 38th Street corner 11th Avenue Uptown Bonifacio City, Philippines, 1634", phone: "(02) 8809 3405 local 7566" }
+            };
+
+            const isFormValid = computed(() => fromName.value.trim() && fromDepartment.value.trim() && toName.value.trim());
+
+            const handleScriptError = (error) => {
+                console.error("Server call failed:", error);
+                isSubmitting.value = false;
+                isLoadingInitial.value = false;
+                isLoadingSources.value = false;
+                items.value.forEach(item => item.isSearching = false);
+                if (error.message && error.message.includes("Authorization is required")) {
+                    showAlert("Your session has expired. The page will reload automatically.", "danger");
+                    setTimeout(() => location.reload(), 3000);
+                } else {
+                    showAlert(`An unexpected error occurred: ${error.message}`, "danger");
+                }
+            };
+            
+            const showAlert = (message, type = "success", duration = 5000) => {
+                alertMessage.value = message;
+                alertType.value = `alert-${type}`;
+                if (duration) setTimeout(() => alertMessage.value = "", duration);
+            };
+
+            const autoResizeTextarea = (event) => {
+                const textarea = event.target;
+                textarea.style.height = 'auto';
+                textarea.style.height = `${textarea.scrollHeight}px`;
+            };
+
+            // MODIFICATION #2: Add a function to resize all textareas after a DOM update
+            const resizeAllTextareas = () => {
+                nextTick(() => {
+                    const textareas = document.querySelectorAll('.table tbody textarea');
+                    textareas.forEach(textarea => {
+                        if (textarea.value) { // Only resize if there is content
+                            textarea.style.height = 'auto';
+                            textarea.style.height = `${textarea.scrollHeight}px`;
+                        }
+                    });
+                });
+            };
+
+            watch(fromDepartment, (newDept) => {
+                const upperCaseDept = newDept.toUpperCase();
+                if (departmentDetails[upperCaseDept]) {
+                    formTitle.value = `${upperCaseDept} TRANSMITTAL FORM`;
+                    addressLine.value = departmentDetails[upperCaseDept].address;
+                    phoneLine.value = departmentDetails[upperCaseDept].phone;
+                } else {
+                    formTitle.value = "TRANSMITTAL FORM";
+                    addressLine.value = "30/F Allaince Global Tower, 36th Street cor. 11th Avenue. Uptown Bonifacio, Taguig City 1630";
+                    phoneLine.value = "(632)898-5999 Fax No. 857-9899 - www.megaworldcorp.com)";
+                }
+            });
+            
+            const updateSelectedSourceId = (event) => {
+                sourceFileSearch.value = event.target.value;
+                const foundFile = sourceFiles.value.find(file => file.label === sourceFileSearch.value);
+                selectedSourceId.value = foundFile ? foundFile.id : "";
+            };
+            const formatCurrency = (value) => !isNaN(parseFloat(value)) ? new Intl.NumberFormat('en-US', { style: 'decimal', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value) : '';
+            const parseCurrency = (value) => !isNaN(parseFloat(String(value).replace(/[^0-9.-]/g, ''))) ? parseFloat(String(value).replace(/[^0-9.-]/g, '')) : null;
+            
+            const getSourceFileList = async () => {
+                isLoadingSources.value = true;
+                try {
+                    const files = await serverApi.getSourceFiles();
+                    files.sort((a, b) => a.label.localeCompare(b.label));
+                    sourceFiles.value = files;
+                    if (files.length === 0) showAlert("No source files found in config.", "warning");
+                } catch (error) { handleScriptError(error); } 
+                finally { isLoadingSources.value = false; }
+            };
+            
+            const getNewTransmittalNo = async () => {
+                isLoadingInitial.value = true;
+                try {
+                    transmittalNo.value = await serverApi.generateTransmittalNumber();
+                } catch (error) { handleScriptError(error); } 
+                finally { isLoadingInitial.value = false; }
+            };
+
+            const searchRfpData = async (index) => {
+                if (!selectedSourceId.value) return showAlert("Please select a source file to check.", "warning");
+                const item = items.value[index];
+                if (!item.rfpPef || item.isSearching) return;
+                
+                item.isSearching = true;
+                try {
+                    const data = await serverApi.fetchRfpData(item.rfpPef, selectedSourceId.value);
+                    if (!data || data.length === 0) return showAlert(`No data found for RFP/PEF #${item.rfpPef}.`, "warning");
+
+                    if (data.length > 1) {
+                        const areRecordsSimilar = (a, b) => !['docDetails', 'supplier', 'payorCompany', 'property', 'location', 'sector', 'serviceType', 'periodCovered', 'particulars'].some(key => (a[key] || '') !== (b[key] || ''));
+                        if (data.every(d => areRecordsSimilar(data[0], d))) {
+                            const totalAmount = data.reduce((sum, record) => sum + (parseFloat(record.rfpAmount) || 0), 0);
+                            Object.assign(item, data[0], { rfpAmount: totalAmount });
+                            showAlert(`Found ${data.length} similar records for ${item.rfpPef}. Amounts totaled.`, "info");
+                        } else {
+                            Object.assign(item, data[0]);
+                            data.slice(1).forEach(result => items.value.push({ ...getNewItem(), ...result, rfpPef: item.rfpPef }));
+                            showAlert(`Found ${data.length} different records. All added as new rows.`, "success");
+                        }
+                    } else {
+                        Object.assign(item, data[0]);
+                        showAlert(`Data for ${item.rfpPef} loaded successfully.`, "success");
+                    }
+
+                    // MODIFICATION #3: Call the new resize function after data is assigned
+                    resizeAllTextareas();
+
+                } catch (error) { handleScriptError(error); } 
+                finally { item.isSearching = false; }
+            };
+
+            const getFormData = () => ({
+                transmittalNo: transmittalNo.value, fromName: fromName.value, fromDepartment: fromDepartment.value,
+                dateTransmitted: dateTransmitted.value, toName: toName.value, toDepartment: toDepartment.value,
+                toAddress: toAddress.value, items: items.value
+            });
+
+            const submitForm = async () => {
+                if (!isFormValid.value) return showAlert("Please fill in the 'From' and 'To' name fields.", "warning");
+                isSubmitting.value = true;
+                try {
+                    const response = await serverApi.saveTransmittalData(getFormData());
+                    showAlert(response, "success");
+                    resetForm();
+                } catch (error) { handleScriptError(error); } 
+                finally { isSubmitting.value = false; }
+            };
+
+            const printPreview = async () => {
+                const printableItems = items.value.filter(item => Object.values(item).some(val => String(val).trim() !== ""));
+                if (printableItems.length === 0) return showAlert("Cannot print an empty form.", "warning");
+                
+                isSubmitting.value = true;
+                showAlert("Generating print preview...", "info", null);
+                try {
+                    const formData = { ...getFormData(), items: printableItems };
+                    const htmlContent = await serverApi.getPrintPreviewHtml(formData);
+                    const printWindow = window.open("", "_blank");
+                    printWindow.document.write(htmlContent);
+                    printWindow.document.close();
+                    printWindow.focus(); 
+                    setTimeout(() => printWindow.print(), 500);
+                } catch (error) { handleScriptError(error); } 
+                finally {
+                    isSubmitting.value = false;
+                    showAlert("", "info", 1);
+                }
+            };
+
+            const resetForm = () => {
+                fromName.value = ""; fromDepartment.value = "";
+                toName.value = ""; toDepartment.value = ""; toAddress.value = "";
+                dateTransmitted.value = new Date().toISOString().slice(0, 10);
+                items.value = [getNewItem()];
+                sourceFileSearch.value = ""; selectedSourceId.value = "";
+                getNewTransmittalNo();
+            };
+            const addItemRow = () => items.value.push(getNewItem());
+            const removeItemRow = (index) => { if (items.value.length > 1) items.value.splice(index, 1); };
+
+            onMounted(() => {
+                getNewTransmittalNo();
+                getSourceFileList();
+            });
+
+            return {
+                fromDepartment, transmittalNo, fromName, dateTransmitted, toName, toDepartment, toAddress, sourceFiles, selectedSourceId, sourceFileSearch, items, isLoadingInitial, isLoadingSources, isSubmitting, alertMessage, alertType, formTitle, addressLine, phoneLine, isFormValid, handleScriptError, showAlert, updateSelectedSourceId, formatCurrency, parseCurrency, getSourceFileList, getNewTransmittalNo, searchRfpData, getFormData, submitForm, printPreview, resetForm, addItemRow, removeItemRow, autoResizeTextarea
+            };
+        },
+    }).mount("#app");
+</script>
+    </body>
+</html>
